@@ -292,6 +292,10 @@ DRAM_SIZE = 16 * 1024 * 1024
 SRAM_BASE = 0x180000000
 SRAM_SIZE = 2 * 1024 * 1024
 
+GAHBCFG_OFFSET = 0x08
+GINTSTS_OFFSET = 0x14
+GINTMSK_OFFSET = 0x18
+
 class MinimalDWC2:
     def __init__(self, usb_irq_vector):
         self.regs = {}
@@ -304,21 +308,21 @@ class MinimalDWC2:
         self.gahbcfg = 0
 
     def read32(self, off):
-        if off == 0x14:   # GINTSTS
+        if off == GINTSTS_OFFSET:
             return self.gintsts
-        if off == 0x18:   # GINTMSK
+        if off == GINTMSK_OFFSET:
             return self.gintmsk
-        if off == 0x08:   # GAHBCFG
+        if off == GAHBCFG_OFFSET:
             return self.gahbcfg
         return self.regs.get(off, 0)
 
     def write32(self, off, value):
         self.regs[off] = value & 0xFFFFFFFF
-        if off == 0x08:   # GAHBCFG
+        if off == GAHBCFG_OFFSET:
             self.gahbcfg = value & 0xFFFFFFFF
-        elif off == 0x18: # GINTMSK
+        elif off == GINTMSK_OFFSET:
             self.gintmsk = value & 0xFFFFFFFF
-        elif off == 0x14: # GINTSTS write-1-to-clear in real hw
+        elif off == GINTSTS_OFFSET:  # write-1-to-clear in real hw
             self.gintsts &= ~value
 
     def inject_ep0_setup(self, uc, dma_addr, setup_packet):
@@ -395,6 +399,7 @@ def send_reset(sock):
 
 def send_setup(sock, request_id, dev_addr, ep, setup_packet):
     header = struct.pack("<B", TCP_USB_REQUEST)
+    # pid is signed here because tcp_usb_request_header declares it as `int`.
     req = struct.pack(
         "<B i B Q I B B H",
         dev_addr,          # addr
@@ -428,6 +433,7 @@ send_setup(sock, request_id=1, dev_addr=0, ep=0, setup_packet=set_address)
 ### Notes about this example
 
 - The default Unix socket path is `/tmp/InfernoUSBRemote`.
+- That default path comes from Inferno itself; for real testing, prefer a private socket path in a directory only your user can access.
 - For TCP mode, use the S8000 machine properties `usb-conn-type`, `usb-conn-addr`, and `usb-conn-port`.
 - This is the transport-level injection example, not a complete USB host stack.
 - A real control transfer usually also includes the status stage after the setup stage.
