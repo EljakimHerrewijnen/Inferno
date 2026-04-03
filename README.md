@@ -18,6 +18,8 @@ ChefKiss Inferno is derivative of the QEMU project which provides Apple ARM devi
 
 Please see [here](https://chefkiss.dev/applehax/inferno/) for more information about the project and how to use it.
 
+For SecureROM-only DFU emulation notes and Unicorn-oriented USB examples, see [docs/secure-rom-dfu-unicorn.md](./docs/secure-rom-dfu-unicorn.md).
+
 ## Legal Disclaimers
 
 “ChefKiss Inferno” is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement.
