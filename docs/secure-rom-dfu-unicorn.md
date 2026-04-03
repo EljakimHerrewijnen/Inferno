@@ -321,8 +321,8 @@ class MinimalDWC2:
         elif off == 0x14: # GINTSTS write-1-to-clear in real hw
             self.gintsts &= ~value
 
-    def inject_ep0_setup(self, uc, dma_addr, payload8):
-        uc.mem_write(dma_addr, payload8)
+    def inject_ep0_setup(self, uc, dma_addr, setup_packet):
+        uc.mem_write(dma_addr, setup_packet)
         self.ep0_out_dma = dma_addr
         # In a fuller model, also update doepint(0), daint and gintsts
         # the same way Inferno's dwc2_device_process_packet() does.
@@ -393,7 +393,7 @@ USB_TOKEN_SETUP = 0x2D
 def send_reset(sock):
     sock.sendall(struct.pack("<B", TCP_USB_RESET))
 
-def send_setup(sock, request_id, dev_addr, ep, setup8):
+def send_setup(sock, request_id, dev_addr, ep, setup_packet):
     header = struct.pack("<B", TCP_USB_REQUEST)
     req = struct.pack(
         "<B i B Q I B B H",
@@ -404,9 +404,9 @@ def send_setup(sock, request_id, dev_addr, ep, setup8):
         0,                 # stream
         0,                 # short_not_ok
         0,                 # int_req
-        len(setup8),       # length
+        len(setup_packet), # length
     )
-    sock.sendall(header + req + setup8)
+    sock.sendall(header + req + setup_packet)
 
 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 sock.connect("/tmp/InfernoUSBRemote")
@@ -422,13 +422,13 @@ set_address = struct.pack(
     0x0000,
 )
 
-send_setup(sock, request_id=1, dev_addr=0, ep=0, setup8=set_address)
+send_setup(sock, request_id=1, dev_addr=0, ep=0, setup_packet=set_address)
 ```
 
 ### Notes about this example
 
 - The default Unix socket path is `/tmp/InfernoUSBRemote`.
-- For TCP mode, use the machine properties `usb-conn-type`, `usb-conn-addr`, and `usb-conn-port`.
+- For TCP mode, use the S8000 machine properties `usb-conn-type`, `usb-conn-addr`, and `usb-conn-port`.
 - This is the transport-level injection example, not a complete USB host stack.
 - A real control transfer usually also includes the status stage after the setup stage.
 - Inferno's DWC2 model has explicit special handling for `SET_ADDRESS`, so this is a good first packet when you are testing enumeration.
