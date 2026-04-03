@@ -356,9 +356,9 @@ def build_emulator(rom_bytes, dwc2_base, aic_base, usb_irq_vector):
     dwc2 = MinimalDWC2(usb_irq_vector)
     aic = MinimalAIC(usb_irq_vector)
     # Wire dwc2.read32/write32 and aic.read32/write32 into whatever
-    # MMIO callback mechanism your Unicorn binding or wrapper exposes.
-    _ = (dwc2_base, aic_base)
-    return uc, dwc2, aic
+    # MMIO callback mechanism your Unicorn binding or wrapper exposes at
+    # dwc2_base and aic_base.
+    return uc, dwc2, aic, {"dwc2": dwc2_base, "aic": aic_base}
 ```
 
 ### Why this scaffold is useful
@@ -417,9 +417,9 @@ set_address = struct.pack(
     "<BBHHH",
     0x00,  # bmRequestType
     0x05,  # SET_ADDRESS
-    0x0001,
-    0x0000,
-    0x0000,
+    0x0001,  # wValue
+    0x0000,  # wIndex
+    0x0000,  # wLength
 )
 
 send_setup(sock, request_id=1, dev_addr=0, ep=0, setup_packet=set_address)
